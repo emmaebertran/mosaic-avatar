@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       model: "gpt-image-1",
       image: imageFile,
       prompt:
-        "Transform this photo into a classical Roman/Byzantine mosaic artwork. Cover the entire image — subject and background — in small uniform square ceramic tiles with thin grout lines between them. Preserve the person's exact likeness, facial features, skin tone, hair color, and clothing colors. The tiles should sample the colors from the original photo without inventing new colors or adding decorative elements. Keep the background tiled with the same colors as the original background. No swirling patterns, no added objects — just a faithful tile rendering of the original photo.",
+        "Transform this photo into a beautiful, vibrant mosaic portrait artwork made of small colorful ceramic tiles with thin white grout lines. Style it like a modern artistic mosaic illustration — slightly painterly and stylized, warm and flattering, with smooth graceful tile patterns that follow the contours of the face and hair. The person should look charming and beautiful, like a mosaic mural you'd find in a fancy hotel lobby. Preserve their hair color, skin tone, eye color, and clothing. Make the background a complementary solid or softly patterned mosaic color that contrasts nicely with the subject. The overall feel should be vibrant, artistic, and gorgeous — not photorealistic or uncanny.",
       size: "1024x1024",
       quality: "high",
     });
