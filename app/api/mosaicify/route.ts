@@ -16,11 +16,10 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const imageFile = await toFile(buffer, "photo.png", { type: "image/png" });
 
-    // Step 1: just beautify the face — NO tile effect, we do that in the browser
     const response = await openai.images.edit({
       model: "gpt-image-1",
       image: imageFile,
-      prompt: `Beautifully retouch and idealize this portrait photo. Make the person look their most gorgeous, flattering version of themselves: perfectly smooth glowing skin with zero imperfections, soft elegant facial features, bright beautiful eyes, lustrous hair. Keep the same hair color, eye color, skin tone, and general likeness. Replace the background with soft abstract wavy shapes in muted complementary tones — sage green, dusty blue, warm cream, sandy beige — like a beautiful painted backdrop. The result should look like a stunning, flattering, idealized portrait painting. Do NOT add any tile or mosaic effect — just make it beautiful.`,
+      prompt: `Transform this photo into a beautiful mosaic portrait. Use small fine mosaic tesserae tiles with thin white grout lines. Make the person look gorgeous and flattering — smooth glowing skin, bright eyes, beautiful hair. Replace the background with soft abstract wavy shapes in muted sage green, dusty blue, and warm cream tones, all in mosaic tiles. The result should look like stunning premium mosaic wall art.`,
       size: "1024x1024",
       quality: "high",
     });
