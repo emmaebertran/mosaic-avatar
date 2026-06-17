@@ -42,9 +42,17 @@ export async function POST(req: NextRequest) {
     // Step 2: generate a mosaic portrait illustration from the description
     const imageRes = await openai.images.generate({
       model: "gpt-image-1",
-      prompt: `Create a gorgeous mosaic tile portrait illustration of a person with these features: ${description}
+      prompt: `A mosaic tile portrait in the style of a modern flat 2D illustration. The subject: ${description}
 
-Style: beautiful stylized mosaic artwork made of small uniform square ceramic tiles with thin grout lines. The face should look idealized, smooth, and flattering — like a stunning animated film character (think Disney/Pixar quality) rendered in mosaic tiles. Clean elegant facial features, glowing smooth skin, expressive eyes, beautiful flowing hair. Keep the same colors as described. The background should be tiled to match the original background color but rendered as mosaic. The overall image should look like premium mosaic wall art — artistic, beautiful, and clearly illustrated rather than photorealistic.`,
+CRITICAL STYLE REQUIREMENTS:
+- This must look like a 2D CARTOON ILLUSTRATION made of mosaic tiles, NOT a realistic photo
+- Draw the face in a cute, anime-influenced illustration style: large bright eyes, smooth simplified skin, soft rounded features, small cute nose, full lips with a warm smile
+- The face must look beautiful, idealized and flattering — like a character from a Studio Ghibli film or a high-end animated movie
+- Hair should be rendered in smooth flowing illustrated strokes made of tiles, with rich warm color
+- Use large visible square mosaic tiles throughout with clear white grout lines
+- Background: soft warm neutral tones in mosaic tiles, simple and uncluttered
+- Do NOT make this look photorealistic — it should clearly look like beautiful 2D illustrated art
+- The skin should be smooth, glowing, with zero texture or realism — pure illustrated style`,
       size: "1024x1024",
       quality: "high",
     });
