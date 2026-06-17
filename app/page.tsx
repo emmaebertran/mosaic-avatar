@@ -134,9 +134,7 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something went wrong");
       const src = data.b64 ? `data:image/png;base64,${data.b64}` : data.url;
-      // Apply canvas tile effect on top of AI result
-      const mosaiced = await applyMosaicEffect(src);
-      setResult(mosaiced);
+      setResult(src);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
