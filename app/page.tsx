@@ -1,65 +1,380 @@
-import Image from "next/image";
+"use client";
+
+import { useCallback, useRef, useState } from "react";
 
 export default function Home() {
+  const [original, setOriginal] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const originalFileRef = useRef<File | null>(null);
+
+  const handleFile = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    originalFileRef.current = file;
+    const url = URL.createObjectURL(file);
+    setOriginal(url);
+    setResult(null);
+    setError(null);
+  }, []);
+
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      const item = Array.from(e.clipboardData.items).find((i) =>
+        i.type.startsWith("image/")
+      );
+      if (item) handleFile(item.getAsFile()!);
+    },
+    [handleFile]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(false);
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    },
+    [handleFile]
+  );
+
+  const generate = async () => {
+    if (!originalFileRef.current) return;
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      const fd = new FormData();
+      fd.append("image", originalFileRef.current);
+      const res = await fetch("/api/mosaicify", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Something went wrong");
+      if (data.b64) {
+        setResult(`data:image/png;base64,${data.b64}`);
+      } else {
+        setResult(data.url);
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const download = () => {
+    if (!result) return;
+    const a = document.createElement("a");
+    a.href = result;
+    a.download = "mosaic-avatar.png";
+    a.click();
+  };
+
+  const reset = () => {
+    setOriginal(null);
+    setResult(null);
+    setError(null);
+    originalFileRef.current = null;
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main
+      className="min-h-screen"
+      style={{ background: "#f9f8f6", fontFamily: "'DM Sans', system-ui, sans-serif" }}
+      onPaste={handlePaste}
+    >
+      {/* Header */}
+      <header
+        style={{
+          borderBottom: "1px solid #e8e6e2",
+          background: "#ffffff",
+          padding: "0 32px",
+          height: 56,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <MosaicLogo />
+          <span
+            style={{
+              fontFamily: "'Fraunces', Georgia, serif",
+              fontWeight: 600,
+              fontSize: 18,
+              color: "#1f1f1f",
+              letterSpacing: "-0.01em",
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            Mosaic
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color: "#7086ad",
+              background: "#e4e7eb",
+              borderRadius: 9999,
+              padding: "2px 8px",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase" as const,
+              marginLeft: 4,
+            }}
+          >
+            Avatar
+          </span>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section style={{ textAlign: "center", padding: "64px 24px 48px" }}>
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 500,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase" as const,
+            color: "#2075bc",
+            marginBottom: 16,
+          }}
+        >
+          Powered by Mosaic AI
+        </p>
+        <h1
+          style={{
+            fontFamily: "'Fraunces', Georgia, serif",
+            fontWeight: 700,
+            fontSize: "clamp(32px, 5vw, 52px)",
+            lineHeight: 1.1,
+            letterSpacing: "-0.02em",
+            color: "#1f1f1f",
+            margin: "0 auto 16px",
+            maxWidth: 600,
+          }}
+        >
+          Turn your photo into<br />
+          <em style={{ fontStyle: "italic", color: "#2075bc" }}>mosaic art</em>
+        </h1>
+        <p style={{ fontSize: 16, color: "#5a5a5e", maxWidth: 440, margin: "0 auto" }}>
+          Paste or upload any portrait and watch it become a tiled mosaic — your likeness preserved, pixel by pixel.
+        </p>
+      </section>
+
+      {/* Main card */}
+      <div style={{ maxWidth: 880, margin: "0 auto", padding: "0 24px 80px" }}>
+        {!original ? (
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            style={{
+              border: `2px dashed ${dragging ? "#2075bc" : "#d7dce4"}`,
+              borderRadius: 16,
+              background: dragging ? "#e8eef1" : "#ffffff",
+              padding: "72px 32px",
+              textAlign: "center",
+              cursor: "pointer",
+              transition: "all 150ms ease",
+            }}
+          >
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 12,
+                background: "#e8eef1",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 20px",
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16V8M8 12l4-4 4 4" stroke="#2075bc" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <rect x="3" y="3" width="18" height="18" rx="4" stroke="#2075bc" strokeWidth="1.5" strokeDasharray="3 2" />
+              </svg>
+            </div>
+            <p style={{ fontWeight: 500, fontSize: 15, color: "#1f1f1f", marginBottom: 6 }}>
+              Drop your photo here
+            </p>
+            <p style={{ fontSize: 13, color: "#8e8e92" }}>
+              or <span style={{ color: "#2075bc", textDecoration: "underline" }}>browse</span> · or press{" "}
+              <kbd style={{ background: "#f0eeea", border: "1px solid #e8e6e2", borderRadius: 4, padding: "1px 5px", fontSize: 12 }}>⌘V</kbd> to paste
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          </div>
+        ) : (
+          <div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: result ? "1fr 1fr" : "1fr",
+                gap: 16,
+                marginBottom: 20,
+              }}
+            >
+              {/* Original */}
+              <div style={{ background: "#ffffff", borderRadius: 12, border: "1px solid #e8e6e2", overflow: "hidden" }}>
+                <div style={{ padding: "10px 16px", borderBottom: "1px solid #e8e6e2", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: "#8e8e92", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>Original</span>
+                  <button
+                    onClick={reset}
+                    style={{ fontSize: 12, color: "#8e8e92", background: "none", border: "none", cursor: "pointer" }}
+                  >
+                    Change photo
+                  </button>
+                </div>
+                <img src={original} alt="Original" style={{ width: "100%", display: "block", aspectRatio: "1/1", objectFit: "cover" }} />
+              </div>
+
+              {/* Result */}
+              {result && (
+                <div style={{ background: "#ffffff", borderRadius: 12, border: "1px solid #e8e6e2", overflow: "hidden" }}>
+                  <div style={{ padding: "10px 16px", borderBottom: "1px solid #e8e6e2", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: "#2075bc", textTransform: "uppercase" as const, letterSpacing: "0.08em" }}>Mosaic</span>
+                    <button
+                      onClick={download}
+                      style={{ fontSize: 12, color: "#2075bc", background: "none", border: "none", cursor: "pointer", fontWeight: 500 }}
+                    >
+                      ↓ Download
+                    </button>
+                  </div>
+                  <img src={result} alt="Mosaic result" style={{ width: "100%", display: "block", aspectRatio: "1/1", objectFit: "cover" }} />
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <div style={{ background: "#f8e7e5", border: "1px solid #f6c3c2", borderRadius: 8, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#ac1f25" }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+              {!result && (
+                <button
+                  onClick={generate}
+                  disabled={loading}
+                  style={{
+                    background: loading ? "#c3d7e8" : "#2075bc",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "12px 32px",
+                    fontSize: 15,
+                    fontWeight: 500,
+                    cursor: loading ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontFamily: "'DM Sans', sans-serif",
+                    transition: "background 150ms",
+                  }}
+                >
+                  {loading ? <><Spinner /> Mosaicifying…</> : "Generate Mosaic"}
+                </button>
+              )}
+              {result && (
+                <>
+                  <button
+                    onClick={download}
+                    style={{
+                      background: "#2075bc",
+                      color: "#ffffff",
+                      border: "none",
+                      borderRadius: 8,
+                      padding: "12px 32px",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    Download PNG
+                  </button>
+                  <button
+                    onClick={() => { setResult(null); generate(); }}
+                    style={{
+                      background: "#ffffff",
+                      color: "#2075bc",
+                      border: "1px solid #c3d7e8",
+                      borderRadius: 8,
+                      padding: "12px 24px",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    Regenerate
+                  </button>
+                  <button
+                    onClick={reset}
+                    style={{
+                      background: "#ffffff",
+                      color: "#5a5a5e",
+                      border: "1px solid #e8e6e2",
+                      borderRadius: 8,
+                      padding: "12px 24px",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    New photo
+                  </button>
+                </>
+              )}
+            </div>
+
+            {loading && (
+              <p style={{ textAlign: "center", fontSize: 13, color: "#8e8e92", marginTop: 12 }}>
+                This takes about 15–30 seconds…
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <footer style={{ borderTop: "1px solid #e8e6e2", padding: "24px 32px", textAlign: "center" }}>
+        <p style={{ fontSize: 12, color: "#8e8e92" }}>
+          Made with Mosaic AI · Your photos are never stored
+        </p>
+      </footer>
+    </main>
+  );
+}
+
+function MosaicLogo() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <rect x="2" y="2" width="11" height="11" rx="2.5" fill="#2075bc" />
+      <rect x="15" y="2" width="11" height="11" rx="2.5" fill="#8ec640" />
+      <rect x="2" y="15" width="11" height="11" rx="2.5" fill="#f8951d" />
+      <rect x="15" y="15" width="11" height="11" rx="2.5" fill="#5a5daa" />
+    </svg>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg
+      width="16" height="16" viewBox="0 0 16 16" fill="none"
+      style={{ animation: "spin 0.8s linear infinite" }}
+    >
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+      <path d="M8 2a6 6 0 0 1 6 6" stroke="white" strokeWidth="2" strokeLinecap="round" />
+    </svg>
   );
 }
