@@ -39,22 +39,15 @@ export async function POST(req: NextRequest) {
 
     const description = visionRes.choices[0].message.content ?? "";
 
-    // Step 2: generate a mosaic portrait illustration from the description
+    // Step 2: generate a mosaic portrait illustration from the description using DALL-E 3
     const imageRes = await openai.images.generate({
-      model: "gpt-image-1",
-      prompt: `A mosaic tile portrait in the style of a modern flat 2D illustration. The subject: ${description}
+      model: "dall-e-3",
+      prompt: `A beautiful mosaic tile portrait of a person: ${description}
 
-CRITICAL STYLE REQUIREMENTS:
-- This must look like a 2D CARTOON ILLUSTRATION made of mosaic tiles, NOT a realistic photo
-- Draw the face in a cute, anime-influenced illustration style: large bright eyes, smooth simplified skin, soft rounded features, small cute nose, full lips with a warm smile
-- The face must look beautiful, idealized and flattering — like a character from a Studio Ghibli film or a high-end animated movie
-- Hair should be rendered in smooth flowing illustrated strokes made of tiles, with rich warm color
-- Use large visible square mosaic tiles throughout with clear white grout lines
-- Background: soft warm neutral tones in mosaic tiles, simple and uncluttered
-- Do NOT make this look photorealistic — it should clearly look like beautiful 2D illustrated art
-- The skin should be smooth, glowing, with zero texture or realism — pure illustrated style`,
+Style: modern illustrated mosaic artwork. The face is drawn in a smooth, flattering, stylized illustration style — like a gorgeous animated movie character. Soft rounded features, glowing smooth skin, bright expressive eyes, beautiful flowing hair. The entire image is composed of small square ceramic mosaic tiles with thin white grout lines visible throughout. The background is simple warm neutral mosaic tiles. The overall result looks like stunning mosaic wall art — clearly an illustration, warm, beautiful, and flattering. NOT photorealistic.`,
       size: "1024x1024",
-      quality: "high",
+      quality: "standard",
+      style: "vivid",
     });
 
     const imageData = imageRes.data?.[0];
