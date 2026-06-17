@@ -41,9 +41,9 @@ export default function Home() {
   );
 
   const applyMosaicEffect = (imageSrc: string): Promise<string> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const img = new Image();
-      img.crossOrigin = "anonymous";
+      img.onerror = () => reject(new Error("Failed to load image"));
       img.onload = () => {
         const size = 1024;
         const tileSize = 13;   // px per tile
