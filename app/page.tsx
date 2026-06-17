@@ -40,6 +40,81 @@ export default function Home() {
     [handleFile]
   );
 
+  const applyMosaicEffect = (imageSrc: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const size = 1024;
+        const tileSize = 13;   // px per tile
+        const grout = 2;       // px gap between tiles
+        const step = tileSize + grout;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+
+        // Draw source image
+        ctx.drawImage(img, 0, 0, size, size);
+        const src = ctx.getImageData(0, 0, size, size);
+
+        // Fill background with a dark grout color
+        ctx.fillStyle = "#c8c0b0";
+        ctx.fillRect(0, 0, size, size);
+
+        // Draw tiles
+        for (let y = 0; y < size; y += step) {
+          for (let x = 0; x < size; x += step) {
+            // Sample average color of this tile from the source
+            let r = 0, g = 0, b = 0, count = 0;
+            for (let ty = 0; ty < tileSize; ty++) {
+              for (let tx = 0; tx < tileSize; tx++) {
+                const px = Math.min(x + tx, size - 1);
+                const py = Math.min(y + ty, size - 1);
+                const i = (py * size + px) * 4;
+                r += src.data[i];
+                g += src.data[i + 1];
+                b += src.data[i + 2];
+                count++;
+              }
+            }
+            r = Math.round(r / count);
+            g = Math.round(g / count);
+            b = Math.round(b / count);
+
+            // Slight brightness variation per tile for depth
+            const variation = (Math.random() - 0.5) * 12;
+            r = Math.min(255, Math.max(0, r + variation));
+            g = Math.min(255, Math.max(0, g + variation));
+            b = Math.min(255, Math.max(0, b + variation));
+
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            // Rounded tile
+            const radius = 2;
+            const tw = Math.min(tileSize, size - x);
+            const th = Math.min(tileSize, size - y);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + tw - radius, y);
+            ctx.quadraticCurveTo(x + tw, y, x + tw, y + radius);
+            ctx.lineTo(x + tw, y + th - radius);
+            ctx.quadraticCurveTo(x + tw, y + th, x + tw - radius, y + th);
+            ctx.lineTo(x + radius, y + th);
+            ctx.quadraticCurveTo(x, y + th, x, y + th - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.src = imageSrc;
+    });
+  };
+
   const generate = async () => {
     if (!originalFileRef.current) return;
     setLoading(true);
@@ -51,11 +126,14 @@ export default function Home() {
       const res = await fetch("/api/mosaicify", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something went wrong");
-      if (data.b64) {
-        setResult(`data:image/png;base64,${data.b64}`);
-      } else {
-        setResult(data.url);
-      }
+
+      const beautified = data.b64
+        ? `data:image/png;base64,${data.b64}`
+        : data.url;
+
+      // Apply canvas mosaic tile effect on top of the beautified image
+      const mosaiced = await applyMosaicEffect(beautified);
+      setResult(mosaiced);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
