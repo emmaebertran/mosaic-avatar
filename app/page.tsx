@@ -97,7 +97,8 @@ export default function Home() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <MosaicLogo />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/mosaic-logo.png" alt="Mosaic" style={{ height: 32, width: "auto" }} />
           <span
             style={{
               fontFamily: "'Fraunces', Georgia, serif",
