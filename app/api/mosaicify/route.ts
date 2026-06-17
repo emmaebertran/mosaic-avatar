@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { toFile } from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -13,44 +14,25 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const base64 = buffer.toString("base64");
-    const mimeType = file.type || "image/jpeg";
+    const imageFile = await toFile(buffer, "photo.png", { type: "image/png" });
 
-    // Step 1: describe the person using vision
-    const visionRes = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image_url",
-              image_url: { url: `data:${mimeType};base64,${base64}` },
-            },
-            {
-              type: "text",
-              text: "Describe this person's appearance in detail for an artist: hair color and length, eye color, skin tone, face shape, approximate age, and what they're wearing. Also describe the background. Be concise and factual.",
-            },
-          ],
-        },
-      ],
-      max_tokens: 300,
-    });
+    const response = await openai.images.edit({
+      model: "gpt-image-1",
+      image: imageFile,
+      prompt: `Transform this into a stunning mosaic portrait artwork with these specific characteristics:
 
-    const description = visionRes.choices[0].message.content ?? "";
+TILES: Very fine, small, irregular organic tesserae — like crackle glaze or stained glass fragments, not chunky square grid tiles. Thin white grout lines between each piece. The tiles should follow the contours of the face and hair in flowing curved lines.
 
-    // Step 2: generate a mosaic portrait illustration from the description using DALL-E 3
-    const imageRes = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: `A beautiful mosaic tile portrait of a person: ${description}
+FACE: Beautifully idealized and flattering. Smooth perfect skin like polished ceramic — no pores, no texture, no imperfections. Soft elegant features. Keep the person's hair color, eye color, lip color and general likeness but make them look their most beautiful, glowing version. Eyes bright and expressive.
 
-Style: modern illustrated mosaic artwork. The face is drawn in a smooth, flattering, stylized illustration style — like a gorgeous animated movie character. Soft rounded features, glowing smooth skin, bright expressive eyes, beautiful flowing hair. The entire image is composed of small square ceramic mosaic tiles with thin white grout lines visible throughout. The background is simple warm neutral mosaic tiles. The overall result looks like stunning mosaic wall art — clearly an illustration, warm, beautiful, and flattering. NOT photorealistic.`,
+BACKGROUND: Completely replace the original background with a beautiful abstract design made of soft wavy flowing shapes in muted complementary tones — think soft sage green, dusty blue, warm cream, and sandy beige flowing together in gentle curves. All rendered in the same fine mosaic tesserae.
+
+OVERALL: Should look exactly like a high-end mosaic portrait mural — artistic, gorgeous, and clearly a work of art. Warm and flattering lighting on the face.`,
       size: "1024x1024",
-      quality: "standard",
-      style: "vivid",
+      quality: "high",
     });
 
-    const imageData = imageRes.data?.[0];
+    const imageData = response.data?.[0];
 
     if (!imageData) {
       return NextResponse.json({ error: "No image returned from OpenAI" }, { status: 500 });
