@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       model: "gpt-image-1",
       image: imageFile,
       prompt:
-        "Transform this photo into a beautiful, vibrant mosaic portrait artwork made of small colorful ceramic tiles with thin white grout lines. Style it like a modern artistic mosaic illustration — slightly painterly and stylized, warm and flattering, with smooth graceful tile patterns that follow the contours of the face and hair. The person should look charming and beautiful, like a mosaic mural you'd find in a fancy hotel lobby. Preserve their hair color, skin tone, eye color, and clothing. Make the background a complementary solid or softly patterned mosaic color that contrasts nicely with the subject. The overall feel should be vibrant, artistic, and gorgeous — not photorealistic or uncanny.",
+        "Reimagine this photo as a stunning, colorful mosaic portrait in the style of a high-end illustrated mosaic artwork. Use a bright, vibrant color palette — rich jewel tones, warm golds, vivid teals, deep blues — made of small uniform square tiles with clean white grout lines. The face should be beautifully stylized and flattering, like a gorgeous graphic novel or animated film character rendered in mosaic tiles. Smooth out all skin imperfections, make the eyes pop, and give the hair rich flowing color. The background should be a completely different complementary color (like deep teal, cobalt blue, or warm terracotta) with elegant swirling or geometric mosaic patterns — totally unlike the original background. Make this look like premium mosaic wall art that belongs in a luxury hotel. It should look clearly artistic and illustrated, not photorealistic.",
       size: "1024x1024",
       quality: "high",
     });
