@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const response = await openai.images.edit({
       model: "gpt-image-1",
       image: imageFile,
-      prompt: `Transform this photo into a beautiful mosaic portrait. Use small fine mosaic tesserae tiles with thin white grout lines. Make the person look gorgeous and flattering — smooth glowing skin, bright eyes, beautiful hair. Replace the background with soft abstract wavy shapes in muted sage green, dusty blue, and warm cream tones, all in mosaic tiles. The result should look like stunning premium mosaic wall art.`,
+      prompt: `Transform this photo into a stunning mosaic portrait artwork. Use small fine mosaic tesserae tiles with thin white grout lines. The face must look stylized and illustrated — not photorealistic. Think of it like a beautiful painted portrait made of tiles: soft simplified features, smooth flawless skin, slightly larger expressive eyes, elegant simplified nose and lips. Flattering and idealized, like a gorgeous illustration. Beautiful flowing hair with rich color. Replace the background with soft abstract wavy shapes in muted sage green, dusty blue, and warm cream tones, all in mosaic tiles. The result should look like premium mosaic wall art — artistic and illustrated, not a photograph.`,
       size: "1024x1024",
       quality: "high",
     });
