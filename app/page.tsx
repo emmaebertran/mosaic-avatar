@@ -116,23 +116,12 @@ export default function Home() {
   };
 
   const generate = async () => {
-    if (!originalFileRef.current) return;
+    if (!original) return;
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const fd = new FormData();
-      fd.append("image", originalFileRef.current);
-      const res = await fetch("/api/mosaicify", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Something went wrong");
-
-      const beautified = data.b64
-        ? `data:image/png;base64,${data.b64}`
-        : data.url;
-
-      // Apply canvas mosaic tile effect on top of the beautified image
-      const mosaiced = await applyMosaicEffect(beautified);
+      const mosaiced = await applyMosaicEffect(original);
       setResult(mosaiced);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -358,7 +347,7 @@ export default function Home() {
                     transition: "background 150ms",
                   }}
                 >
-                  {loading ? <><Spinner /> Mosaicifying…</> : "Generate Mosaic"}
+                  {loading ? <><Spinner /> Working…</> : "Generate Mosaic"}
                 </button>
               )}
               {result && (
@@ -417,7 +406,7 @@ export default function Home() {
 
             {loading && (
               <p style={{ textAlign: "center", fontSize: 13, color: "#8e8e92", marginTop: 12 }}>
-                This takes about 15–30 seconds…
+                Applying tiles…
               </p>
             )}
           </div>
