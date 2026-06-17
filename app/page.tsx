@@ -46,8 +46,8 @@ export default function Home() {
       img.onerror = () => reject(new Error("Failed to load image"));
       img.onload = () => {
         const size = 1024;
-        const tileSize = 13;   // px per tile
-        const grout = 2;       // px gap between tiles
+        const tileSize = 9;    // smaller tiles = more detailed, more mosaic-like
+        const grout = 1.5;     // thin grout
         const step = tileSize + grout;
 
         const canvas = document.createElement("canvas");
@@ -55,57 +55,64 @@ export default function Home() {
         canvas.height = size;
         const ctx = canvas.getContext("2d")!;
 
-        // Draw source image
+        // Draw source image to sample colors from
         ctx.drawImage(img, 0, 0, size, size);
         const src = ctx.getImageData(0, 0, size, size);
 
-        // Fill background with a dark grout color
-        ctx.fillStyle = "#c8c0b0";
+        // Warm grout background
+        ctx.fillStyle = "#d4c9b8";
         ctx.fillRect(0, 0, size, size);
 
-        // Draw tiles
         for (let y = 0; y < size; y += step) {
           for (let x = 0; x < size; x += step) {
-            // Sample average color of this tile from the source
-            let r = 0, g = 0, b = 0, count = 0;
-            for (let ty = 0; ty < tileSize; ty++) {
-              for (let tx = 0; tx < tileSize; tx++) {
-                const px = Math.min(x + tx, size - 1);
-                const py = Math.min(y + ty, size - 1);
-                const i = (py * size + px) * 4;
-                r += src.data[i];
-                g += src.data[i + 1];
-                b += src.data[i + 2];
-                count++;
-              }
-            }
-            r = Math.round(r / count);
-            g = Math.round(g / count);
-            b = Math.round(b / count);
+            // Sample center pixel color of this tile (faster, looks fine at small size)
+            const cx = Math.min(Math.round(x + tileSize / 2), size - 1);
+            const cy = Math.min(Math.round(y + tileSize / 2), size - 1);
+            const i = (cy * size + cx) * 4;
+            let r = src.data[i];
+            let g = src.data[i + 1];
+            let b = src.data[i + 2];
 
-            // Slight brightness variation per tile for depth
-            const variation = (Math.random() - 0.5) * 12;
-            r = Math.min(255, Math.max(0, r + variation));
-            g = Math.min(255, Math.max(0, g + variation));
-            b = Math.min(255, Math.max(0, b + variation));
+            // Subtle brightness variation per tile for depth/texture
+            const v = (Math.random() - 0.5) * 18;
+            r = Math.min(255, Math.max(0, r + v));
+            g = Math.min(255, Math.max(0, g + v));
+            b = Math.min(255, Math.max(0, b + v));
 
-            ctx.fillStyle = `rgb(${r},${g},${b})`;
-            // Rounded tile
-            const radius = 2;
-            const tw = Math.min(tileSize, size - x);
-            const th = Math.min(tileSize, size - y);
+            // Slight random size variation per tile (organic feel)
+            const shrink = Math.random() * 1.2;
+            const tw = tileSize - shrink;
+            const th = tileSize - shrink;
+            const ox = shrink / 2;
+            const oy = shrink / 2;
+
+            // Slight random rotation per tile
+            const angle = (Math.random() - 0.5) * 0.18;
+            const cx2 = x + ox + tw / 2;
+            const cy2 = y + oy + th / 2;
+
+            ctx.save();
+            ctx.translate(cx2, cy2);
+            ctx.rotate(angle);
+            ctx.fillStyle = `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+
+            // Rounded rect centered at origin
+            const rx = -tw / 2;
+            const ry = -th / 2;
+            const radius = 1.5;
             ctx.beginPath();
-            ctx.moveTo(x + radius, y);
-            ctx.lineTo(x + tw - radius, y);
-            ctx.quadraticCurveTo(x + tw, y, x + tw, y + radius);
-            ctx.lineTo(x + tw, y + th - radius);
-            ctx.quadraticCurveTo(x + tw, y + th, x + tw - radius, y + th);
-            ctx.lineTo(x + radius, y + th);
-            ctx.quadraticCurveTo(x, y + th, x, y + th - radius);
-            ctx.lineTo(x, y + radius);
-            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.moveTo(rx + radius, ry);
+            ctx.lineTo(rx + tw - radius, ry);
+            ctx.quadraticCurveTo(rx + tw, ry, rx + tw, ry + radius);
+            ctx.lineTo(rx + tw, ry + th - radius);
+            ctx.quadraticCurveTo(rx + tw, ry + th, rx + tw - radius, ry + th);
+            ctx.lineTo(rx + radius, ry + th);
+            ctx.quadraticCurveTo(rx, ry + th, rx, ry + th - radius);
+            ctx.lineTo(rx, ry + radius);
+            ctx.quadraticCurveTo(rx, ry, rx + radius, ry);
             ctx.closePath();
             ctx.fill();
+            ctx.restore();
           }
         }
 
